@@ -1,0 +1,10 @@
+google-ads
+requests
+pandas
+python-dotenv
+rich
+google-cloud-bigquery
+python-dateutil
+beautifulsoup4
+markdownify
+dotenv

@@ -1,0 +1,8 @@
+# google-ads.yaml.example
+
+developer_token: "developer_token_here"
+client_id: "client_id_here"
+client_secret: "client_secret_here"
+refresh_token: "refresh_token_here"
+login_customer_id: "1234567890" # Apenas números, sem hifens.
+use_proto_plus: True

@@ -13,7 +13,7 @@ from dateutil.relativedelta import relativedelta
 
 import requests
 from supabase import create_client, Client
-from google.ads.googleads.client import GoogleAdsClient
+# from google.ads.googleads.client import GoogleAdsClient
 from rich.logging import RichHandler
 
 # ---------------------------------------------------------------------------
@@ -40,7 +40,7 @@ LINKEDIN_ACCESS_TOKEN: str = ""
 LINKEDIN_AD_ACCOUNT_IDS: list[str] = []
 SUPABASE_URL: str = ""
 SUPABASE_KEY: str = ""
-GOOGLE_ADS_YAML_PATH: str = ""
+# GOOGLE_ADS_YAML_PATH: str = ""
 
 
 def prompt_credentials() -> None:
@@ -49,7 +49,7 @@ def prompt_credentials() -> None:
     global HUBSPOT_TOKEN
     global LINKEDIN_ACCESS_TOKEN, LINKEDIN_AD_ACCOUNT_IDS
     global SUPABASE_URL, SUPABASE_KEY
-    global GOOGLE_ADS_YAML_PATH
+    # global GOOGLE_ADS_YAML_PATH
 
     print("\n=== Credenciais necessárias ===")
     META_ACCESS_TOKEN       = getpass.getpass("META_ACCESS_TOKEN: ")
@@ -59,21 +59,21 @@ def prompt_credentials() -> None:
     LINKEDIN_AD_ACCOUNT_IDS = [a.strip() for a in input("LINKEDIN_AD_ACCOUNT_IDS (vírgula): ").split(",")]
     SUPABASE_URL            = input("SUPABASE_URL: ")
     SUPABASE_KEY            = getpass.getpass("SUPABASE_KEY: ")
-    GOOGLE_ADS_YAML_PATH    = input("GOOGLE_ADS_YAML_PATH: ")
+    # GOOGLE_ADS_YAML_PATH    = input("GOOGLE_ADS_YAML_PATH: ")
     print("===============================\n")
 
 # ---------------------------------------------------------------------------
 # Constantes de Supabase (nomes das tabelas)
 # ---------------------------------------------------------------------------
 TABLE_META      = "teste_data_meta_01"
-TABLE_GOOGLE    = "teste_data_google_01"
+# TABLE_GOOGLE    = "teste_data_google_01"
 TABLE_LINKEDIN  = "teste_data_linkedin_01"
 TABLE_HUB       = "teste_01"
 TABLE_DEALS     = "teste_data_deals_01"
 
 # Data de início histórico por fonte
 META_HISTORY_START      = "2023-09-21"
-GOOGLE_HISTORY_START    = "2021-11-22"
+# GOOGLE_HISTORY_START    = "2021-11-22"
 LINKEDIN_HISTORY_START  = "2023-09-01"
 HUBSPOT_HISTORY_START   = "2025-08-01"
 
@@ -306,92 +306,92 @@ def send_meta(sb: Client, rows: list[dict]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GOOGLE ADS
+# GOOGLE ADS — DESATIVADO (comentado para testes com Meta e LinkedIn apenas)
 # Schema: campaign_name (STRING), spend (FLOAT), date (DATE),
 #         dt_h_recording_data (TIMESTAMP)
 # ---------------------------------------------------------------------------
 
-GOOGLE_CUSTOMER_IDS = ["1805339996", "9474287342", "6935705652", "4802217233"]
+# GOOGLE_CUSTOMER_IDS = ["1805339996", "9474287342", "6935705652", "4802217233"]
 
-def fetch_google_ads(data_inicial: str, data_final: str) -> list[dict]:
-    """
-    Busca gastos por campanha na Google Ads API para o intervalo informado.
-    Itera todas as sub-contas sob o manager account.
-    """
-    log.info("Google Ads: buscando de %s até %s.", data_inicial, data_final)
-
-    GOOGLE_ADS_YAML_PATH = input("GOOGLE_ADS_YAML_PATH: ").strip()
-    client = GoogleAdsClient.load_from_storage(GOOGLE_ADS_YAML_PATH)
-    ga_service = client.get_service("GoogleAdsService")
-
-    query = f"""
-        SELECT
-            campaign.name,
-            segments.date,
-            metrics.cost_micros
-        FROM campaign
-        WHERE segments.date BETWEEN '{data_inicial}' AND '{data_final}'
-          AND metrics.cost_micros > 0
-        ORDER BY segments.date DESC
-    """
-
-    records: list[dict] = []
-    for customer_id in GOOGLE_CUSTOMER_IDS:
-        try:
-            stream = ga_service.search_stream(customer_id=customer_id, query=query)
-            count = 0
-            for batch in stream:
-                for row in batch.results:
-                    cost = row.metrics.cost_micros / 1_000_000
-                    records.append({
-                        "campaign_name":  row.campaign.name,
-                        "spend":          cost,
-                        "date":           row.segments.date,
-                        "ad_account_id":  customer_id,
-                    })
-                    count += 1
-            log.info("  Google Ads conta %s: %d registros.", customer_id, count)
-        except Exception as exc:
-            log.warning("  Google Ads conta %s: erro — %s", customer_id, exc)
-
-    log.info("Google Ads: %d registros totais.", len(records))
-    return records
-
-
-def process_google_records(raw: list[dict], recording_ts: str) -> list[dict]:
-    """Adiciona dt_h_recording_data aos registros do Google Ads."""
-    return [{**r, "dt_h_recording_data": recording_ts} for r in raw]
+# def fetch_google_ads(data_inicial: str, data_final: str) -> list[dict]:
+#     """
+#     Busca gastos por campanha na Google Ads API para o intervalo informado.
+#     Itera todas as sub-contas sob o manager account.
+#     """
+#     log.info("Google Ads: buscando de %s até %s.", data_inicial, data_final)
+#
+#     GOOGLE_ADS_YAML_PATH = input("GOOGLE_ADS_YAML_PATH: ").strip()
+#     client = GoogleAdsClient.load_from_storage(GOOGLE_ADS_YAML_PATH)
+#     ga_service = client.get_service("GoogleAdsService")
+#
+#     query = f"""
+#         SELECT
+#             campaign.name,
+#             segments.date,
+#             metrics.cost_micros
+#         FROM campaign
+#         WHERE segments.date BETWEEN '{data_inicial}' AND '{data_final}'
+#           AND metrics.cost_micros > 0
+#         ORDER BY segments.date DESC
+#     """
+#
+#     records: list[dict] = []
+#     for customer_id in GOOGLE_CUSTOMER_IDS:
+#         try:
+#             stream = ga_service.search_stream(customer_id=customer_id, query=query)
+#             count = 0
+#             for batch in stream:
+#                 for row in batch.results:
+#                     cost = row.metrics.cost_micros / 1_000_000
+#                     records.append({
+#                         "campaign_name":  row.campaign.name,
+#                         "spend":          cost,
+#                         "date":           row.segments.date,
+#                         "ad_account_id":  customer_id,
+#                     })
+#                     count += 1
+#             log.info("  Google Ads conta %s: %d registros.", customer_id, count)
+#         except Exception as exc:
+#             log.warning("  Google Ads conta %s: erro — %s", customer_id, exc)
+#
+#     log.info("Google Ads: %d registros totais.", len(records))
+#     return records
 
 
-def run_google_collect(sb: Client, recording_ts: str) -> tuple[list[dict], str | None]:
-    """Coleta, processa e salva os dados do Google Ads. Retorna (rows, path)."""
-    log.info("=== Coletando Google Ads ===")
-    last = get_last_date(sb, TABLE_GOOGLE, "date")
-
-    if last is None:
-        data_inicial = GOOGLE_HISTORY_START
-        log.info("Tabela Google vazia. Carga histórica desde %s.", data_inicial)
-    else:
-        data_inicial = (
-            datetime.strptime(last, "%Y-%m-%d") + timedelta(days=1)
-        ).strftime("%Y-%m-%d")
-        log.info("Última data Google: %s. Buscando a partir de %s.", last, data_inicial)
-
-    data_final = yesterday()
-
-    if data_inicial > data_final:
-        log.info("Google Ads já está atualizado. Nada a coletar.")
-        return [], None
-
-    raw  = fetch_google_ads(data_inicial, data_final)
-    rows = process_google_records(raw, recording_ts)
-    path = save_temp("google", rows, recording_ts)
-    return rows, path
+# def process_google_records(raw: list[dict], recording_ts: str) -> list[dict]:
+#     """Adiciona dt_h_recording_data aos registros do Google Ads."""
+#     return [{**r, "dt_h_recording_data": recording_ts} for r in raw]
 
 
-def send_google(sb: Client, rows: list[dict]) -> None:
-    insert_rows(sb, TABLE_GOOGLE, rows)
-    log.info("=== Google Ads: %d linhas inseridas. ===", len(rows))
+# def run_google_collect(sb: Client, recording_ts: str) -> tuple[list[dict], str | None]:
+#     """Coleta, processa e salva os dados do Google Ads. Retorna (rows, path)."""
+#     log.info("=== Coletando Google Ads ===")
+#     last = get_last_date(sb, TABLE_GOOGLE, "date")
+#
+#     if last is None:
+#         data_inicial = GOOGLE_HISTORY_START
+#         log.info("Tabela Google vazia. Carga histórica desde %s.", data_inicial)
+#     else:
+#         data_inicial = (
+#             datetime.strptime(last, "%Y-%m-%d") + timedelta(days=1)
+#         ).strftime("%Y-%m-%d")
+#         log.info("Última data Google: %s. Buscando a partir de %s.", last, data_inicial)
+#
+#     data_final = yesterday()
+#
+#     if data_inicial > data_final:
+#         log.info("Google Ads já está atualizado. Nada a coletar.")
+#         return [], None
+#
+#     raw  = fetch_google_ads(data_inicial, data_final)
+#     rows = process_google_records(raw, recording_ts)
+#     path = save_temp("google", rows, recording_ts)
+#     return rows, path
+
+
+# def send_google(sb: Client, rows: list[dict]) -> None:
+#     insert_rows(sb, TABLE_GOOGLE, rows)
+#     log.info("=== Google Ads: %d linhas inseridas. ===", len(rows))
 
 
 # ---------------------------------------------------------------------------
@@ -592,6 +592,7 @@ CONTACT_PROPERTIES = [
     "form_submitted",
     "country",
     "region",
+    "main_country",
 ]
 
 
@@ -638,8 +639,9 @@ def _fetch_hubspot_contacts_window(since_ms: int, until_ms: int, max_retries: in
                 "filterGroups": [
                     {
                         "filters": [
-                            {"propertyName": "createdate", "operator": "GTE", "value": str(since_ms)},
-                            {"propertyName": "createdate", "operator": "LT",  "value": str(until_ms)},
+                            {"propertyName": "createdate",   "operator": "GTE", "value": str(since_ms)},
+                            {"propertyName": "createdate",   "operator": "LT",  "value": str(until_ms)},
+                            {"propertyName": "main_country", "operator": "EQ",  "value": "Brasil"},
                         ]
                     }
                 ],
@@ -834,6 +836,7 @@ def process_hubspot_records(contacts: list[dict], recording_ts: str) -> list[dic
             "form_submitted":             props.get("form_submitted"),
             "country":                    props.get("country"),
             "region":                     props.get("region"),
+            "main_country":               props.get("main_country"),
             "has_valid_deal":             valid_flags.get(cid, True),
         }
         rows.append(row)
@@ -1114,7 +1117,7 @@ def main() -> None:
 
     pipelines = [
         ("meta",     "Meta Ads",     run_meta_collect,     send_meta),
-        ("google",   "Google Ads",   run_google_collect,   send_google),
+        # ("google",   "Google Ads",   run_google_collect,   send_google),
         ("linkedin", "LinkedIn Ads", run_linkedin_collect, send_linkedin),
         ("hubspot",  "HubSpot",      run_hubspot_collect,  send_hubspot),
         ("deals",    "HubSpot Deals", run_deals_collect,   send_deals),
@@ -1139,7 +1142,7 @@ def main() -> None:
 
     # --- Fase 2: confirmação e envio ---
     log.info("--- Fase 2: revisão e envio para o Supabase ---")
-    falhas = []
+    falhas: dict[str, tuple[list[dict], object]] = {}
     for key, (nome, rows, path, fn_send) in coletados.items():
         if not aguardar_confirmacao(nome, path):
             log.warning("Envio do %s cancelado pelo usuário. Arquivo mantido em: %s", nome, path)
@@ -1148,13 +1151,104 @@ def main() -> None:
             fn_send(sb, rows)
         except Exception as exc:
             log.error("Envio [%s] falhou: %s", nome, exc, exc_info=True)
-            falhas.append(nome)
+            falhas[nome] = (rows, fn_send)
+
+    while falhas:
+        log.warning("Envios que falharam: %s", ", ".join(falhas.keys()))
+        resposta = input("Deseja tentar novamente os envios que falharam? [s/N]: ").strip().lower()
+        if resposta != "s":
+            break
+        novas_falhas: dict[str, tuple[list[dict], object]] = {}
+        for nome, (rows, fn_send) in falhas.items():
+            try:
+                fn_send(sb, rows)
+                log.info("%s: enviado com sucesso no reenvio.", nome)
+            except Exception as exc:
+                log.error("Reenvio [%s] falhou: %s", nome, exc, exc_info=True)
+                novas_falhas[nome] = (rows, fn_send)
+        falhas = novas_falhas
 
     if falhas:
-        log.warning("dashspy_v1 finalizado com falhas no envio: %s", ", ".join(falhas))
+        log.warning("dashspy_v1 finalizado com falhas no envio: %s", ", ".join(falhas.keys()))
     else:
         log.info("dashspy_v1 finalizado com sucesso.")
 
 
+PLATFORM_SEND_MAP = {
+    "meta":     send_meta,
+    "linkedin": send_linkedin,
+    "hubspot":  send_hubspot,
+    "deals":    send_deals,
+}
+
+
+def retry_from_outputs() -> None:
+    """Carrega arquivos JSON de outputs/ e reenvia para o Supabase sem re-coletar."""
+    from pathlib import Path
+
+    output_dir = Path("outputs")
+    if not output_dir.exists():
+        log.error("Diretório outputs/ não encontrado.")
+        return
+
+    json_files = sorted(output_dir.glob("*.json"))
+    if not json_files:
+        log.warning("Nenhum arquivo JSON encontrado em outputs/.")
+        return
+
+    print("\nArquivos disponíveis em outputs/:")
+    for i, f in enumerate(json_files, 1):
+        size = len(json.loads(f.read_text(encoding="utf-8")))
+        print(f"  [{i}] {f.name}  ({size} linhas)")
+
+    sel = input("\nNúmeros dos arquivos a enviar (ex: 1,3) ou 'todos': ").strip()
+    if sel.lower() == "todos":
+        selected = list(json_files)
+    else:
+        idxs = [int(x.strip()) - 1 for x in sel.split(",") if x.strip().isdigit()]
+        selected = [json_files[i] for i in idxs if 0 <= i < len(json_files)]
+
+    if not selected:
+        log.warning("Nenhum arquivo selecionado. Encerrando.")
+        return
+
+    global SUPABASE_URL, SUPABASE_KEY
+    SUPABASE_URL = input("SUPABASE_URL: ")
+    SUPABASE_KEY = getpass.getpass("SUPABASE_KEY: ")
+    sb = get_supabase_client()
+
+    falhas: list[str] = []
+    for f in selected:
+        platform = f.name.split("_")[0]
+        fn_send = PLATFORM_SEND_MAP.get(platform)
+        if fn_send is None:
+            log.warning("Plataforma desconhecida para '%s'. Pulando.", f.name)
+            continue
+
+        rows = json.loads(f.read_text(encoding="utf-8"))
+        log.info("Arquivo %s: %d linhas.", f.name, len(rows))
+
+        resposta = input(f"  Enviar {f.name} ({len(rows)} linhas) para o Supabase? [s/N]: ").strip().lower()
+        if resposta != "s":
+            log.info("Envio de %s cancelado.", f.name)
+            continue
+
+        try:
+            fn_send(sb, rows)
+            log.info("%s enviado com sucesso.", f.name)
+        except Exception as exc:
+            log.error("Erro ao enviar %s: %s", f.name, exc, exc_info=True)
+            falhas.append(f.name)
+
+    if falhas:
+        log.warning("retry_from_outputs finalizado com falhas: %s", ", ".join(falhas))
+    else:
+        log.info("retry_from_outputs finalizado com sucesso.")
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--retry" in sys.argv:
+        retry_from_outputs()
+    else:
+        main()

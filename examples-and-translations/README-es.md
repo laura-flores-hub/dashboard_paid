@@ -3,8 +3,30 @@ Código en Python que recolecta, de forma automatizada y periódica, informació
 
 ## Dashboards
 
-- `dashboard.html` — dashboard interactivo principal de visualización de los datos recolectados.
-- `charts-demo.html` — sandbox de exploración de tipos de gráfico con datos reales del pipeline.
+### Frontend principal — Next.js (`frontend/management-dashboard-view 2/`)
+
+Interfaz construida con Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui y Recharts.
+
+#### Ejecutar localmente
+
+```bash
+cd "frontend/management-dashboard-view 2"
+pnpm install
+pnpm dev
+```
+
+Acceder en `http://localhost:3000`.
+
+#### Deploy en Vercel
+
+- **Framework Preset:** Next.js
+- **Root Directory:** `frontend/management-dashboard-view 2`
+- **Package Manager:** pnpm
+
+### Dashboards estáticos (legado)
+
+- `frontend/dashboard.html` — dashboard interactivo principal de visualización de los datos recolectados.
+- `frontend/charts-demo.html` — sandbox de exploración de tipos de gráfico con datos reales del pipeline.
 
 ## Flujo del Pipeline y Manejo de Fallos
 

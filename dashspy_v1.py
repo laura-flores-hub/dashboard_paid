@@ -13,7 +13,7 @@ from dateutil.relativedelta import relativedelta
 
 import requests
 from supabase import create_client, Client
-# from google.ads.googleads.client import GoogleAdsClient
+from google.ads.googleads.client import GoogleAdsClient
 from rich.logging import RichHandler
 
 # ---------------------------------------------------------------------------
@@ -40,7 +40,7 @@ LINKEDIN_ACCESS_TOKEN: str = ""
 LINKEDIN_AD_ACCOUNT_IDS: list[str] = []
 SUPABASE_URL: str = ""
 SUPABASE_KEY: str = ""
-# GOOGLE_ADS_YAML_PATH: str = ""
+GOOGLE_ADS_YAML_PATH: str = ""
 
 
 def prompt_credentials() -> None:
@@ -49,7 +49,7 @@ def prompt_credentials() -> None:
     global HUBSPOT_TOKEN
     global LINKEDIN_ACCESS_TOKEN, LINKEDIN_AD_ACCOUNT_IDS
     global SUPABASE_URL, SUPABASE_KEY
-    # global GOOGLE_ADS_YAML_PATH
+    global GOOGLE_ADS_YAML_PATH
 
     print("\n=== Credenciais necessárias ===")
     META_ACCESS_TOKEN       = getpass.getpass("META_ACCESS_TOKEN: ")
@@ -59,21 +59,21 @@ def prompt_credentials() -> None:
     LINKEDIN_AD_ACCOUNT_IDS = [a.strip() for a in input("LINKEDIN_AD_ACCOUNT_IDS (vírgula): ").split(",")]
     SUPABASE_URL            = input("SUPABASE_URL: ")
     SUPABASE_KEY            = getpass.getpass("SUPABASE_KEY: ")
-    # GOOGLE_ADS_YAML_PATH    = input("GOOGLE_ADS_YAML_PATH: ")
+    GOOGLE_ADS_YAML_PATH    = input("GOOGLE_ADS_YAML_PATH: ")
     print("===============================\n")
 
 # ---------------------------------------------------------------------------
 # Constantes de Supabase (nomes das tabelas)
 # ---------------------------------------------------------------------------
 TABLE_META      = "teste_data_meta_01"
-# TABLE_GOOGLE    = "teste_data_google_01"
+TABLE_GOOGLE    = "teste_data_google_01"
 TABLE_LINKEDIN  = "teste_data_linkedin_01"
 TABLE_HUB       = "teste_01"
 TABLE_DEALS     = "teste_data_deals_01"
 
 # Data de início histórico por fonte
 META_HISTORY_START      = "2023-09-21"
-# GOOGLE_HISTORY_START    = "2021-11-22"
+GOOGLE_HISTORY_START    = "2021-11-22"
 LINKEDIN_HISTORY_START  = "2023-09-01"
 HUBSPOT_HISTORY_START   = "2025-08-01"
 
@@ -306,92 +306,91 @@ def send_meta(sb: Client, rows: list[dict]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GOOGLE ADS — DESATIVADO (comentado para testes com Meta e LinkedIn apenas)
+# GOOGLE ADS
 # Schema: campaign_name (STRING), spend (FLOAT), date (DATE),
 #         dt_h_recording_data (TIMESTAMP)
 # ---------------------------------------------------------------------------
 
-# GOOGLE_CUSTOMER_IDS = ["1805339996", "9474287342", "6935705652", "4802217233"]
+GOOGLE_CUSTOMER_IDS = ["1805339996", "9474287342", "6935705652", "4802217233"]
 
-# def fetch_google_ads(data_inicial: str, data_final: str) -> list[dict]:
-#     """
-#     Busca gastos por campanha na Google Ads API para o intervalo informado.
-#     Itera todas as sub-contas sob o manager account.
-#     """
-#     log.info("Google Ads: buscando de %s até %s.", data_inicial, data_final)
-#
-#     GOOGLE_ADS_YAML_PATH = input("GOOGLE_ADS_YAML_PATH: ").strip()
-#     client = GoogleAdsClient.load_from_storage(GOOGLE_ADS_YAML_PATH)
-#     ga_service = client.get_service("GoogleAdsService")
-#
-#     query = f"""
-#         SELECT
-#             campaign.name,
-#             segments.date,
-#             metrics.cost_micros
-#         FROM campaign
-#         WHERE segments.date BETWEEN '{data_inicial}' AND '{data_final}'
-#           AND metrics.cost_micros > 0
-#         ORDER BY segments.date DESC
-#     """
-#
-#     records: list[dict] = []
-#     for customer_id in GOOGLE_CUSTOMER_IDS:
-#         try:
-#             stream = ga_service.search_stream(customer_id=customer_id, query=query)
-#             count = 0
-#             for batch in stream:
-#                 for row in batch.results:
-#                     cost = row.metrics.cost_micros / 1_000_000
-#                     records.append({
-#                         "campaign_name":  row.campaign.name,
-#                         "spend":          cost,
-#                         "date":           row.segments.date,
-#                         "ad_account_id":  customer_id,
-#                     })
-#                     count += 1
-#             log.info("  Google Ads conta %s: %d registros.", customer_id, count)
-#         except Exception as exc:
-#             log.warning("  Google Ads conta %s: erro — %s", customer_id, exc)
-#
-#     log.info("Google Ads: %d registros totais.", len(records))
-#     return records
+def fetch_google_ads(data_inicial: str, data_final: str) -> list[dict]:
+    """
+    Busca gastos por campanha na Google Ads API para o intervalo informado.
+    Itera todas as sub-contas sob o manager account.
+    """
+    log.info("Google Ads: buscando de %s até %s.", data_inicial, data_final)
 
+    client = GoogleAdsClient.load_from_storage(GOOGLE_ADS_YAML_PATH)
+    ga_service = client.get_service("GoogleAdsService")
 
-# def process_google_records(raw: list[dict], recording_ts: str) -> list[dict]:
-#     """Adiciona dt_h_recording_data aos registros do Google Ads."""
-#     return [{**r, "dt_h_recording_data": recording_ts} for r in raw]
+    query = f"""
+        SELECT
+            campaign.name,
+            segments.date,
+            metrics.cost_micros
+        FROM campaign
+        WHERE segments.date BETWEEN '{data_inicial}' AND '{data_final}'
+          AND metrics.cost_micros > 0
+        ORDER BY segments.date DESC
+    """
+
+    records: list[dict] = []
+    for customer_id in GOOGLE_CUSTOMER_IDS:
+        try:
+            stream = ga_service.search_stream(customer_id=customer_id, query=query)
+            count = 0
+            for batch in stream:
+                for row in batch.results:
+                    cost = row.metrics.cost_micros / 1_000_000
+                    records.append({
+                        "campaign_name":  row.campaign.name,
+                        "spend":          cost,
+                        "date":           row.segments.date,
+                        "ad_account_id":  customer_id,
+                    })
+                    count += 1
+            log.info("  Google Ads conta %s: %d registros.", customer_id, count)
+        except Exception as exc:
+            log.warning("  Google Ads conta %s: erro — %s", customer_id, exc)
+
+    log.info("Google Ads: %d registros totais.", len(records))
+    return records
 
 
-# def run_google_collect(sb: Client, recording_ts: str) -> tuple[list[dict], str | None]:
-#     """Coleta, processa e salva os dados do Google Ads. Retorna (rows, path)."""
-#     log.info("=== Coletando Google Ads ===")
-#     last = get_last_date(sb, TABLE_GOOGLE, "date")
-#
-#     if last is None:
-#         data_inicial = GOOGLE_HISTORY_START
-#         log.info("Tabela Google vazia. Carga histórica desde %s.", data_inicial)
-#     else:
-#         data_inicial = (
-#             datetime.strptime(last, "%Y-%m-%d") + timedelta(days=1)
-#         ).strftime("%Y-%m-%d")
-#         log.info("Última data Google: %s. Buscando a partir de %s.", last, data_inicial)
-#
-#     data_final = yesterday()
-#
-#     if data_inicial > data_final:
-#         log.info("Google Ads já está atualizado. Nada a coletar.")
-#         return [], None
-#
-#     raw  = fetch_google_ads(data_inicial, data_final)
-#     rows = process_google_records(raw, recording_ts)
-#     path = save_temp("google", rows, recording_ts)
-#     return rows, path
+def process_google_records(raw: list[dict], recording_ts: str) -> list[dict]:
+    """Adiciona dt_h_recording_data aos registros do Google Ads."""
+    return [{**r, "dt_h_recording_data": recording_ts} for r in raw]
 
 
-# def send_google(sb: Client, rows: list[dict]) -> None:
-#     insert_rows(sb, TABLE_GOOGLE, rows)
-#     log.info("=== Google Ads: %d linhas inseridas. ===", len(rows))
+def run_google_collect(sb: Client, recording_ts: str) -> tuple[list[dict], str | None]:
+    """Coleta, processa e salva os dados do Google Ads. Retorna (rows, path)."""
+    log.info("=== Coletando Google Ads ===")
+    last = get_last_date(sb, TABLE_GOOGLE, "date")
+
+    if last is None:
+        data_inicial = GOOGLE_HISTORY_START
+        log.info("Tabela Google vazia. Carga histórica desde %s.", data_inicial)
+    else:
+        data_inicial = (
+            datetime.strptime(last, "%Y-%m-%d") + timedelta(days=1)
+        ).strftime("%Y-%m-%d")
+        log.info("Última data Google: %s. Buscando a partir de %s.", last, data_inicial)
+
+    data_final = yesterday()
+
+    if data_inicial > data_final:
+        log.info("Google Ads já está atualizado. Nada a coletar.")
+        return [], None
+
+    raw  = fetch_google_ads(data_inicial, data_final)
+    rows = process_google_records(raw, recording_ts)
+    path = save_temp("google", rows, recording_ts)
+    return rows, path
+
+
+def send_google(sb: Client, rows: list[dict]) -> None:
+    insert_rows(sb, TABLE_GOOGLE, rows)
+    log.info("=== Google Ads: %d linhas inseridas. ===", len(rows))
 
 
 # ---------------------------------------------------------------------------
@@ -1117,7 +1116,7 @@ def main() -> None:
 
     pipelines = [
         ("meta",     "Meta Ads",     run_meta_collect,     send_meta),
-        # ("google",   "Google Ads",   run_google_collect,   send_google),
+        ("google",   "Google Ads",   run_google_collect,   send_google),
         ("linkedin", "LinkedIn Ads", run_linkedin_collect, send_linkedin),
         ("hubspot",  "HubSpot",      run_hubspot_collect,  send_hubspot),
         ("deals",    "HubSpot Deals", run_deals_collect,   send_deals),

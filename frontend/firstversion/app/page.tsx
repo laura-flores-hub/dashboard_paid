@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   Users,
   Target,
@@ -21,6 +24,10 @@ import { leadData, campaignData } from "@/lib/dashboard-data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function DashboardPage() {
+  const [period, setPeriod] = useState("30d");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
@@ -41,7 +48,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Select defaultValue="30d">
+              <Select value={period} onValueChange={setPeriod}>
                 <SelectTrigger className="w-[140px] h-9 text-sm bg-secondary border-border/50">
                   <SelectValue placeholder="Select period" />
                 </SelectTrigger>
@@ -50,8 +57,26 @@ export default function DashboardPage() {
                   <SelectItem value="30d">Last 30 days</SelectItem>
                   <SelectItem value="90d">Last 90 days</SelectItem>
                   <SelectItem value="ytd">Year to date</SelectItem>
+                  <SelectItem value="custom">Custom range</SelectItem>
                 </SelectContent>
               </Select>
+              {period === "custom" && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={customStart}
+                    onChange={e => setCustomStart(e.target.value)}
+                    className="h-9 rounded-md border border-border/50 bg-secondary px-2 text-sm text-foreground"
+                  />
+                  <span className="text-sm text-muted-foreground">–</span>
+                  <input
+                    type="date"
+                    value={customEnd}
+                    onChange={e => setCustomEnd(e.target.value)}
+                    className="h-9 rounded-md border border-border/50 bg-secondary px-2 text-sm text-foreground"
+                  />
+                </div>
+              )}
               <ThemeToggle />
             </div>
           </div>

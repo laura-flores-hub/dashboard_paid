@@ -25,6 +25,7 @@ const navItems = [
     label: "Leads",
     href: "/leads",
     icon: Users,
+    hidden: true,
   },
   {
     label: "Campaigns",
@@ -35,6 +36,7 @@ const navItems = [
     label: "Analytics",
     href: "/analytics",
     icon: BarChart3,
+    hidden: true,
   },
   {
     label: "Settings",
@@ -79,7 +81,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-2">
         <ul className="space-y-1">
-          {navItems.map((item) => {
+          {navItems.filter(item => !item.hidden).map((item) => {
             const isActive = pathname === item.href;
             return (
               <li key={item.href}>
